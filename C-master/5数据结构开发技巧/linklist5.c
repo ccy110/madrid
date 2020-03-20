@@ -6,9 +6,12 @@
 单链表
 双向链表
 循环链表
+双向循环链表
+
 
 单链表反转
 链表中的检测
+约瑟夫问题
 两个有序链表的合并
 删除链表倒数第n个链表
 求链表中间节点
@@ -39,98 +42,360 @@ head是头指针,而不是头结点 它只占用4字节大小空间(如果是32�
 #include <malloc.h>
 #include <windows.h>
 
-typedef struct node
-{
-    struct node * pre;
-    int data;
-    struct node * next;
-}Node, *Tlinkedlist;
-
-
-Tlinkedlist create(Tlinkedlist head){
-    //分配头节点
-    head = (Tlinkedlist)malloc(sizeof(Node));
-    head->pre = NULL;
-    head->next = NULL;
-
-    int i;
-    Tlinkedlist tmp;
-    for(i = 1, tmp = head; i<4; i++, tmp = tmp->next){
-        Tlinkedlist p;
-        p = (Tlinkedlist)malloc(sizeof(Node));
-
-        p->pre = tmp;
-        p->data = i;
-        p->next = NULL;
-
-        tmp->next= p;
-    }
-
-    return head;
-}
-
-Tlinkedlist insert(Tlinkedlist head, int position, int data){
-    Tlinkedlist tmp = head;
-    int i = 1;
-
-    while(i < position){
-        //找前驱节点
-        tmp = tmp->next;
-        i++;
-    }
-    Tlinkedlist p;
-    p = (Tlinkedlist)malloc(sizeof(Node));
-
-    p->data = data;
-    tmp->next->pre = p;
-    p->next = tmp->next;
-    tmp->next=p;
-    p->pre=tmp;
-
-    return head;
-}
-
-head del(Tlinkedlist head, int deldata){
-    Tlinkedlist tmp = head->next;
-    while(tmp){
-        if(tmp->data == deldata){
-            tmp->next->pre = tmp->pre;
-            tmp->pre->next = tmp->next;
-            free(tmp);
-            return head;
-        }
-        tmp=tmp->next;
-    }
-}
 
 
 
-void show(Tlinkedlist head){
-    Tlinkedlist tmp;
-    int i;
-    for(i = 1, tmp = head -> next; tmp != NULL; i++, tmp = tmp->next){
-        printf("%d -> %d\n", i, tmp->data);
-    }
-}
+//单链表翻转
 
 
 
-int main(){
-    Tlinkedlist head = NULL;
-    head = create(head);
-    show(head);
 
-    printf("insert......\n");
+
+
+
+
+
+
+
+
+
+
+// //双向循环链表
+// typedef struct node{
+//     struct node * pre;
+//     int data;
+//     struct node * next;    
+// }Node, *linklist;
+
+
+// linklist create(linklist h){
+//     h = (linklist)malloc(sizeof(Node));
+//     h->pre=h->next=NULL;
+
+//     int num;
+//     printf("please input create num\n", num);
+//     scanf("%d", &num);
+
+//     //向前指针
+//     // linklist ahead = h;
+//     while(num--){
+//         linklist p;
+//         p = (linklist)malloc(sizeof(Node));
+        
+//         //尾插法 
+//         // p->data = num;
+//         // ahead->next=p;
+//         // p->pre = ahead;
+
+//         // p->next=h;
+//         // h->pre=p;
+
+//         //头插法
+//         p->data = num;
+
+//         if(h->next == NULL){
+//             p->next = h;
+//             h->pre = p;
+
+//             p->pre = h;
+//             h->next = p;
+//         }else{
+//             h->next->pre = p;
+//             p->next=h->next;
+//             h->next=p;
+//             p->pre=h; 
+//         }
+
+
+//         // ahead = p;
+//     }
+
+//     return h;
+// }
+
+// void show(linklist h){
+//     linklist backward = h->pre;
+//     while(backward != h){
+//         printf("data:%d\n", backward->data);
+//         backward = backward->pre;
+//     }
+
+// }
+
+// int main(){
+//     linklist h;
+//     h = create(h);
+//     show(h);
+//     Sleep(10000);
+//     return 0;
+// }
+
+
+
+// // 双向循环链表
+// typedef struct tagNode
+// {
+//     struct tagNode *pre;
+//     int data;
+//     struct tagNode *next;
+// }Node,*LinkList;
+
+// void InitList(LinkList *L)
+// {
+//     *L=(LinkList)malloc(sizeof(Node));
+//     (*L)->next=(*L)->pre=*L;
+
+// }
+
+// void CreateLink(LinkList L, int n)
+// {
+//     LinkList p=L,q;
+//     while(n--)
+//     {
+//         q=(LinkList)malloc(sizeof(Node));
+//         scanf("%d",&q->data);
+        
+//         p->next=q;
+//         q->pre=p;
+        
+//         q->next=L;//尾插法
+//         L->pre=q;
+//         p=q;
+//     }
+// }
+
+// void TraverseList(LinkList L)
+// {
+//     LinkList p = L->pre;
+//     while(p!=L)
+//     {
+//         printf("%d ",p->data);
+//         p=p->pre;
+//     }
+// }
+
+// int main()
+// {
+//     int n;
+//     LinkList L;
+//     InitList(&L);
+ 
+//     scanf("%d",&n);
+ 
+//     CreateLink(L,n);
+//     TraverseList(L);
+
+//     Sleep();
+//     return 0;
+// }
+
+
+// 循环链表
+// // 首先 static 的最主要功能是隐藏(对其他文件隐藏)，其次因为 static 变量存放在静态存储区(还有全局变量)，所以它具备持久性和默认值0。
+// static int size=0;  
+
+// typedef struct Node{      //定义一个链表的结点 
+//     int data;
+//     struct Node *next;
+// }node, *linklist; 
+
+
+// linklist head_creat(linklist l){  //头插法建立循环链表 
+ 
+//     int num = 3;                   //插入的链表数量    
+//     int a = 3;
+//     while(num--)
+//     {
+//         linklist p;
+//         p=(linklist)malloc(sizeof(node));
+//         printf("please input data\n");
+//         scanf("%d",&p->data);
+//         p->next=l->next;
+//         l->next=p;
+//         size++;
+//     }
+
+//     linklist p=l;
+//     while(p->next!=NULL){
+//         p=p->next;
+//     }
+//     p->next=l;
+//     return l;
+// }
+
+
+// void out_list(linklist h){    //显示链表结点值 
+//     linklist p=h->next;
+//     while(p!=h){
+//         printf("node data:%d ",p->data);
+//         p=p->next;
+//     }
+//     printf("size is %d\n",size);
+// }
+// linklist dele(linklist h){   //在链表中删除值为num的结点
+//     int rmnum;
+//     printf("please input delnum");
+//     scanf("%d",&rmnum);
+//     linklist p=h->next;
+//     linklist q=h;
+//     while(p!=h){
+//         if(p->data==rmnum){
+//             q->next=p->next;
+//             p->next=NULL;
+//             free(p);
+//             size--;
+//             break;
+//          }
+//          p=p->next;
+//          q=q->next;
+//     }
+//     return h;
+
+// }
+// linklist inset(linklist l){  //插入结点 
+//     printf("insert num"); 
+//     int num;                   //插入的链表数量    
+//     scanf("%d",&num);
+//     while(num--){
+//         linklist p;
+//         p=(linklist)malloc(sizeof(node));
+//         scanf("%d",&p->data);
+//         p->next=l->next;
+//         l->next=p;
+//         size++;
+//     }
+//     return l; 
+    
+// }
+// int main(){
+//     linklist h;       //初始化头节点              
+//     h=(node*)malloc(sizeof(node));
+//     h->data=666; 
+//     h->next=NULL;
+//     char choose;
+//     printf("ple input option:\nc------init\ni------insert\nd------delete\ns------show\nx------exit\n"); 
+    
+//     while(1){
+//         scanf("%c",&choose);
+//         switch(choose){
+//             case 'c':
+//                 h = head_creat(h);
+//                 out_list(h);
+//                 break;
+//             case 'i':
+//                 h = inset(h);
+//                 out_list(h);
+//                 break; 
+//             case 'd':
+//                 h = dele(h);
+//                 out_list(h);
+//                 break;
+//             case 's':
+//                 out_list(h);
+//                 break;
+//             case 'x':
+//                 return 0;
+//             default:
+//                 printf("input error"); 
+            
+//         }
+//     }
+     
+// }
+
+
+// typedef struct node
+// {
+//     struct node * pre;
+//     int data;
+//     struct node * next;
+// }Node, *Tlinkedlist;
+
+
+// Tlinkedlist create(Tlinkedlist head){
+//     //分配头节点
+//     head = (Tlinkedlist)malloc(sizeof(Node));
+//     head->pre = NULL;
+//     head->next = NULL;
+
+//     int i;
+//     Tlinkedlist tmp;
+//     for(i = 1, tmp = head; i<4; i++, tmp = tmp->next){
+//         Tlinkedlist p;
+//         p = (Tlinkedlist)malloc(sizeof(Node));
+
+//         p->pre = tmp;
+//         p->data = i;
+//         p->next = NULL;
+
+//         tmp->next= p;
+//     }
+
+//     return head;
+// }
+
+// Tlinkedlist insert(Tlinkedlist head, int position, int data){
+//     Tlinkedlist tmp = head;
+//     int i = 1;
+
+//     while(i < position){
+//         //找前驱节点
+//         tmp = tmp->next;
+//         i++;
+//     }
+//     Tlinkedlist p;
+//     p = (Tlinkedlist)malloc(sizeof(Node));
+
+//     p->data = data;
+//     tmp->next->pre = p;
+//     p->next = tmp->next;
+//     tmp->next=p;
+//     p->pre=tmp;
+
+//     return head;
+// }
+
+// head del(Tlinkedlist head, int deldata){
+//     Tlinkedlist tmp = head->next;
+//     while(tmp){
+//         if(tmp->data == deldata){
+//             tmp->next->pre = tmp->pre;
+//             tmp->pre->next = tmp->next;
+//             free(tmp);
+//             return head;
+//         }
+//         tmp=tmp->next;
+//     }
+// }
+
+
+
+// void show(Tlinkedlist head){
+//     Tlinkedlist tmp;
+//     int i;
+//     for(i = 1, tmp = head -> next; tmp != NULL; i++, tmp = tmp->next){
+//         printf("%d -> %d\n", i, tmp->data);
+//     }
+// }
+
+
+
+// int main(){
+//     Tlinkedlist head = NULL;
+//     head = create(head);
+//     show(head);
+
+//     printf("insert......\n");
   
-    head = insert(head, 2, 789);
-    show(head);
+//     head = insert(head, 2, 789);
+//     show(head);
 
-    printf("del......\n");
-    head = del(head, 789);  
-    show(head);
+//     printf("del......\n");
+//     head = del(head, 789);  
+//     show(head);
 
-    return 0;
-}
+//     return 0;
+// }
 
 
 
