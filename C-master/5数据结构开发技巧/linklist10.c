@@ -153,17 +153,20 @@ pnode reverse2(pnode head)//两两节点之间不断交换
     
     
     p->pnext = NULL; //旧的头指针是新的尾指针，next需要指向NULL
+    
     pnode tmp;
-    while(1){
+    while(tmp != NULL){
         tmp = q->pnext;
         q->pnext = p;
         //前两个都反转了所以反转之前 需要一个临时tmp保存下一个 要不都反转了 找不到了
         p = q;
         q = tmp;
-        if(tmp == NULL){
-            return p;      
-        }
+        // if(tmp == NULL){
+        //     return p;      
+        // }
     }
+    // 最后一个节点当头节点了 输出不出来 todo
+    return p;
    
 }
 
