@@ -45,20 +45,191 @@ head是头指针,而不是头结点 它只占用4字节大小空间(如果是32�
 
 
 
-//单链表翻转
+//单链表反转
+
+// void Reverse(List *L){
+//     //分别是当前节点，直接前驱节点，直接后继节点
+//     LNode *current, *pre, *pnext;
+//     //初始化
+//     current  = L -> next;
+//     pre = NULL;
+//     while(current != NULL){
+ 
+//         //保留后继节点
+//         pnext = current -> next;
+//         //新的后继指向前驱实现反转
+//         current -> next = pre;
+ 
+//         //将当前节点向后移动
+//         pre = current;
+//         current = pnext;
+//     }
+//     return;
+// }
+
+// 单链表反转方法
+// 1 ，两两对换
+// 2， 放入数组，倒置数组
+// 3， 递归实现    
+typedef struct node
+{
+    int data;
+    struct node * pnext;
+}Node, *pnode;
+
+pnode CreateNode()
+{
+
+    pnode phead=(pnode)malloc(sizeof(Node));
+    //判断是否申请空间成功
+    if(phead==NULL)
+    {
+        printf("fail to allocate memory");
+        return NULL;
+    }
+    phead->pnext=NULL;
+    
+    int n;
+    pnode ph=phead;
+    
+    for(int i=0; i<5; i++)
+    {
+
+        pnode p=(pnode)malloc(sizeof(Node));
+        if(p==NULL)
+        {
+            printf("fail to allocate memory");
+            return NULL;
+        }
+        p->data=(i+2)*19;
+
+        phead->pnext=p;
+        p->pnext=NULL;
+        phead=phead->pnext;
+
+    }
+    return ph;
+}
+
+int list(pnode head)
+{
+    int count=0;
+    printf("遍历结果：\n");
+    while(head->pnext!=NULL)
+    {
+        printf("%d\t",head->pnext->data);
+        head=head->pnext;
+        count++;
+    }
+    printf("链表长度为：%d\n",count);
+    return count;
+}
+
+pnode reverse2(pnode head)//两两节点之间不断交换
+{
+    // //判断是否是空链表
+    // if(head == NULL || head->next == NULL)
+    //     return head;
+
+    // pnode pre = NULL;
+    // pnode next = NULL;
+    
+    // while(head != NULL){
+    //     next = head->pnext;
+    //     head->pnext = pre;
+    //     pre = head;
+    //     head = next;
+    // }
+    // return pre;
 
 
+     if(NULL==head || NULL==head->pnext) 
+        return head; //加上头节点少于两个节点没有反转的必要。
 
+    pnode p;
+    pnode q;
+    p = head; 
+    q = head->pnext;
+    
+    
+    p->pnext = NULL; //旧的头指针是新的尾指针，next需要指向NULL
+    pnode tmp;
+    while(1){
+        tmp = q->pnext;
+        q->pnext = p;
+        //前两个都反转了所以反转之前 需要一个临时tmp保存下一个 要不都反转了 找不到了
+        p = q;
+        q = tmp;
+        if(tmp == NULL){
+            return p;      
+        }
+    }
+   
+}
 
+    
 
+void reverse1(pnode head,int count)//把链表的节点值放在数组中，倒置数组
+{
+    int a[5]= {0};
 
+    for(int i=0; i<count,head->pnext!=NULL; i++)
+    {
+        a[i]=head->pnext->data;
+        head=head->pnext;
+    }
 
+    for(int j=0,i=count-1; j<count; j++,i--)
+        printf("%d\t",a[i]);
 
+}
 
+// pnode reverse3(pnode pre,pnode cur,pnode t)//递归实现链表倒置
+// {
+//     cur -> pnext = pre;
+//     if(t == NULL)
+//         return cur; //返回无头节点的指针，遍历的时候注意
+//     reverse3(cur,t,t->pnext);
+// }
 
+// pnode new_reverse3(pnode head){ //新的递归转置
 
+//     if(head == NULL || head->next == NULL)
+//         return head;
+//     pnode new_node = new_reverse3(head->next);
+//     head->next->next = head;
+//     head->next = NULL;
+//     return new_node; //返回新链表头指针
 
+// }
 
+int main()
+{
+     pnode p=CreateNode();
+     pnode p3=CreateNode();
+
+     int n=list(p);
+     
+     printf("1反转之后：\n");
+     reverse1(p, n);
+     printf("\n");
+     printf("2反转之后：\n");
+     pnode p1=reverse2(p);
+     
+     list(p1);
+     // p3 -> pnext = reverse3(NULL,p3 -> pnext,p3->pnext->pnext);
+     // printf("3反转之后：\n");
+     // list(p3);
+     // free(p);
+     // free(p1);
+     // free(p3);
+
+     // Sleep(10000);
+     return 0;
+}
+
+// 这里注意： head ->next = pre; 以及 pre = head->next，前者把head->next 指向 pre，而后者是把head->next指向的节点赋值给pre。
+// 如果原来head->next 指向 pnext节点，前者则是head重新指向pre，与pnext节点断开，后者把pnext值赋值给pre，head与pnext并没有断开。
 
 // //双向循环链表
 // typedef struct node{
