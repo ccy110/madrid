@@ -3,18 +3,65 @@
 ****************************************/
 
 /****************************************
-单链表
+单链表　实地想一下不包含头节点的缺点
+单链表反转
+
+
+链表中环的检测 一快一慢是否相遇
+----------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------
+一种O（n）的办法就是（搞两个指针，一个每次递增一步，一个每次递增两步，如果有环的话两者必然重合，反之亦然）：
+关于这个解法最形象的比喻就是在操场当中跑步，速度快的会把速度慢的扣圈
+
+可以证明，p2追赶上p1的时候，p1一定还没有走完一遍环路，p2也不会跨越p1多圈才追上,一圈之内一定追上
+
+我们可以从p2和p1的位置差距来证明，p2一定会赶上p1但是不会跳过p1的
+
+因为p2每次走2步，而p1走一步，所以他们之间的差距是一步一步的缩小，4，3，2，1，0 到0的时候就重合了
+
+根据这个方式，可以证明，p2每次走三步以上，并不总能加快检测的速度，反而有可能判别不出有环
+
+既然能够判断出是否是有环路，那改如何找到这个环路的入口呢？
+
+解法如下： 当p2按照每次2步，p1每次一步的方式走，发现p2和p1重合，确定了单向链表有环路了
+
+接下来，让p2回到链表的头部，重新走，每次步长不是走2了，而是走1，那么当p1和p2再次相遇的时候，就是环路的入口了。
+
+这点可以证明的：
+
+在p2和p1第一次相遇的时候，假定p1走了n步骤，环路的入口是在p步的时候经过的，那么有
+
+p1走的路径： p+c ＝ n；         c为p1和p2相交点，距离环路入口的距离
+
+p2走的路径： p+c+k*L = 2*n；   L为环路的周长，k是整数
+
+显然，如果从p+c点开始，p1再走n步骤的话，还可以回到p+c这个点
+
+同时p2从头开始走的话，经过n步，也会达到p+c这点
+
+显然在这个步骤当中p1和p2只有前p步骤走的路径不同，所以当p1和p2再次重合的时候，必然是在链表的环路入口点上。
+-----------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------------
+
+
+1、如何判断一个链表是不是这类链表？
+2、如果链表为存在环，如果找到环的入口点？扩展：判断两个单链表是否相交，如果相交，给出相交的第一个点。 
+http://blog.chinaunix.net/uid-20235103-id-1970885.html 环的问题
+
+求链表中间节点　设置一个快指针，一个慢指针，并且快指针的步长为慢指针的两倍，当快指针到达结尾时，慢指针一定在中间。
+删除链表倒数第n个节点   也是快慢指针的问题
+
+
+两个有序链表的合并
+
+循环链表???????????????????????????尾节点指向头节点
+约瑟夫问题
+
 双向链表
-循环链表
 双向循环链表
 
-
-单链表反转
-链表中的检测
-约瑟夫问题
-两个有序链表的合并
-删除链表倒数第n个链表
-求链表中间节点
+延伸之散列表散列冲突链表的解决办法
+延伸之跳表的实现(redis有序集合)原理：建索引、二分查找
 
 
 emacs的剪切为C-w；复制为M-w
@@ -41,8 +88,542 @@ head是头指针,而不是头结点 它只占用4字节大小空间(如果是32�
 #include <stdlib.h>
 #include <malloc.h>
 #include <windows.h>
+typedef struct node
+{
+    int data;
+    struct node * next;   
+}Node, *linklist;
+
+//单链表的打印
+void show(linklist head){
+    int i;
+    linklist ahead = head;
+    for(i = 0; ahead != NULL; i++, ahead = ahead->next){
+        printf("node(%d)->%d \n", i, ahead->data);
+    }
+}
+
+linklist create(linklist head, int num){
+    //创建头节点
+    head = (linklist)malloc(sizeof(Node));
+    head->data = num;
+    head->next = NULL;
+
+    int i;
+    //一个向前的节点指针
+    linklist ahead = head;
+    linklist p;
+    for(i = 1; i<=num; i++, ahead = ahead->next){
+        p = (linklist)malloc(sizeof(Node));
+        p->data = i*10;
+        ahead->next = p;
+        p->next = NULL;
+    }
+    show(head);
+    return head;
+}
+
+//指针两两反转
+linklist reverse1(linklist head){
+
+    linklist p = head->next;
+    linklist q = head->next->next;
+    linklist r = q;
+    head->next->next = NULL;
+    while(1)
+    {
+        r = q->next;
+        if(r == NULL){
+            q->next = p;
+            p = q;
+            break;
+        }
+        q->next = p;
+        p = q;
+        q = r;
+    }
+    head->next = p;
+    show(head);
+    return head;
+}
+linklist reverse21(linklist pre, linklist cur, linklist after){
+    cur->next = pre;
+    if(after == NULL){
+        return cur;
+    }
+    reverse21(cur, after, after->next);
+}
 
 
+//指针递归反转
+linklist reverse2(linklist head){
+    //前中后
+    linklist pre = NULL;
+    linklist cur = head->next;
+    linklist after = head->next->next;
+    cur =  reverse21(pre, cur, after);
+    head->next = cur;
+
+    show(head);
+    return cur;
+}
+
+void searchentrypoint(linklist head, linklist meet){
+    //从头节点开始？从首元节点开始？
+    linklist p = head;
+    while(1){
+        p = p->next;
+        meet = meet->next;
+        if((p->data == meet->data) && (p->next == meet->next)){
+            printf("p->data:%d p->next:%p\n", p->data, p->next);
+            break;
+        }
+    }
+}
+
+void checkcircle(linklist head){
+    //移动两个节点
+    linklist fast = head;
+    //移动一个节点
+    linklist slow = head;
+    while(1){
+        fast = fast->next;
+        if(fast == NULL){
+            printf("%d\n", 0);
+            break;
+        }
+        fast = fast->next;
+        if(fast == NULL){
+            printf("%d\n", 0);
+            break;
+        }
+        slow = slow->next;
+        if(slow->next == fast->next){
+            printf("slow->data:%d\n", slow->data);
+            printf("fast->data:%d\n", fast->data);
+            printf("slow->next:%p\n", slow->next);
+            printf("fast->next:%p\n", fast->next);
+            printf("%d\n", 1);
+            searchentrypoint(head, slow->next);
+            break;
+        }
+    }
+
+    // while  ( fast  &&  fast -> next ) 
+    // {
+    //     slow  =  slow -> next;
+    //     fast  =  fast -> next -> next;
+    //     if  ( slow  ==  fast )  break ;
+    // }
+
+    // return   ! (fast  ==  NULL  ||  fast -> next  ==  NULL);
+
+    // 入口点
+    //     slist * slow  =  head,  * fast  =  head;
+
+    // while  ( fast  &&  fast -> next ) 
+    // {
+    //     slow  =  slow -> next;
+    //     fast  =  fast -> next -> next;
+    //     if  ( slow  ==  fast )  break ;
+    // }
+
+    // if  (fast  ==  NULL  ||  fast -> next  ==  NULL)
+    //     return  NULL;
+
+    // slow  =  head;
+    // while  (slow  !=  fast)
+    // {
+    //      slow  =  slow -> next;
+    //      fast  =  fast -> next;
+    // }
+
+    // return  slow;
+
+}
+
+int main(){
+
+    //创建7节点的链表
+    linklist head;
+    int NodeNum = 7;
+    head = create(head, NodeNum);
+    //指针两两反转
+    head = reverse1(head);
+    // //递归反转
+    head = reverse2(head);
+
+    checkcircle(head);
+
+    // int n = 3;
+    // delnode(node, n);
+    // //在创建一个有序链表并将其与之合并
+    // combine(head);
+
+    // searchmidnode(head);
+
+    return 0;
+}
+
+
+
+
+
+
+// 链表中环的检测 一快一慢是否相遇
+// bool IsExitsLoop(slist * head)
+// {
+//     slist * slow = head ,  * fast = head;
+
+//     while  ( fast  &&  fast -> next ) 
+//     {
+//         slow  =  slow -> next;
+//         fast  =  fast -> next -> next;
+//         if  ( slow  ==  fast )  break ;
+//     }
+
+//     return   ! (fast  ==  NULL  ||  fast -> next  ==  NULL);
+// }
+
+
+// 两个有序链表的合并
+// typedef struct List
+// {
+//     int a;
+//     struct List *next;
+// }list;
+
+
+// void newList(list *l)
+// {
+//     //初始化头节点
+//     l->next = NULL;
+// }
+// void setList(list * l)
+// {
+//     //建立链表
+//     int i = 1;
+//     int j;
+//     while (i)
+//     {
+//         scanf_s("%d", &j);
+//         if (j == -1)
+//         {
+//             i = 0;
+//         }
+//         else
+//         {
+//             list *l1 = (list *)malloc(sizeof(list));//为新的结点分派内存
+//             l1->a = j;//储存数据
+//             /*
+//             将最后结点的next区域指向新结点
+//             将新结点的next区域指向设置为空
+//             */
+//             l->next = l1;
+//             l1->next = NULL;
+//             l = l->next;
+//         }
+//     }
+// }
+// void printfList(list *l)
+// {
+//     printf("该链表内容为：\n");
+//     while (l->next)
+//     {
+//         printf("%d\t", l->next->a);
+//         l = l->next;
+//     }
+//     printf("\n");
+// }
+// list *add(list *LA, list *LB)
+// {
+//     //记录两个链表的头结点
+//     list *la=LA;
+//     list *l = LA;
+//     list *lb = LB;
+//     //移动指针
+//     LA = LA->next;
+//     LB = LB->next;
+//     la->next = NULL;
+    
+//     while (LA!=NULL&&LB!=NULL)
+//     {
+//         /*
+//         将两个结点的数据进行比较，数据较小的结点接在头结点后面，
+//         */
+//         if (LA->a < LB->a)
+//         {
+//             la->next = LA;
+//             la = LA;
+//             LA = LA->next;
+//         }
+//         else
+//         {
+//             la->next = LB;
+//             la = LB;
+//             LB = LB->next;
+//         }
+//     }
+
+//     //若其中一个链表的结点已经全接在新表中则将另一个链表的剩余结点接在新表的后面
+//     if (LA)
+//     {
+//         la->next = LA;
+//     }
+//     if(LB)
+//     {
+//         la->next = LB;
+//     }
+//     free(lb);
+//     return l;
+// }
+// int main()
+// {
+//     //为结点分配内存
+//     list *LA = (list *)malloc(sizeof(list));
+//     list *LB = (list *)malloc(sizeof(list));
+//     //初始化结点
+//     newList(LA);
+//     newList(LB);
+
+//     //建立链表
+//     setList(LA);
+//     setList(LB);
+//     //输出链表的内容
+//     printf("LA的数据:\n");
+//     printfList(LA);
+//     printf("LB的数据:\n");
+
+//     printfList(LB);
+
+//     list *LC = add(LA, LB);
+    
+//     //输出合并后的新表
+//     printfList(LC);
+//     system("pause");
+//     return 0;
+// }
+
+
+
+
+// 约瑟夫问题
+// 有ｎ只猴子，按顺时针方向围成一圈选大王（编号从１到ｎ），从第１号开始报数，一直数到ｍ，数到ｍ的猴子退出圈外，剩下的猴子再接着从1开始报数。
+// 就这样，直到圈内只剩下一只猴子时，这个猴子就是猴王，编程求输入ｎ，ｍ后，输出最后猴王的编号。
+
+// 循环链表实现约瑟夫问题
+
+// typedef struct NODE{
+//     struct NODE *next;
+//     int data;
+// }Node,*Linklist;
+
+// void Print_Linklist(Linklist L)
+// {
+//     Linklist head = L;
+//     printf("List: ");
+//     while(L->next != head)
+//     {
+//         printf("%d ",L->data);
+//         L = L->next;
+//     }
+//     printf("%d ",L->data);
+//     printf("\n");
+// }
+
+// int main()
+// {
+//     int i;
+//     Linklist L;
+//     Linklist head;
+//     Linklist Out;
+
+//     L = (Node*)malloc(sizeof(Node));
+//     head = L;
+//     L->data = 1;
+//     L->next = head;
+    
+
+//     for(i=2;i<=41;i++)
+//     {
+//         L->next=(Node*)malloc(sizeof(Node));
+//         L->next->data = i;
+//         L->next->next = head;
+//         L = L->next;
+//     }
+
+
+//     Print_Linklist(head);
+    
+//     L = head;
+    
+//     while(L != L->next)
+//     {
+//          for(i=1;i<2;i++)
+//          {
+//              L = L->next;
+//          }
+//          Out = L->next;
+//          printf("%2d号 ----> 自杀！\n",Out->data);
+//          L ->next = Out->next;
+//          L = L->next;
+//          free(Out);
+//     }
+//     printf("幸存者是：%d",L->data);
+//     return 0;
+// }
+// typedef struct node
+// {
+//     int data;
+//     struct node * next;
+// }Node, *linklist;
+
+
+// int yuesefu(int m, int n);
+
+// linklist create(linklist head, int x){
+//     //头节点
+//     head = malloc(sizeof(Node));
+//     head->next = NULL;
+//     head->data = 1000;
+//     linklist ahead = head;
+//     for(int i = 0; i < x-1; i++, ahead = ahead->next){
+//         linklist p = malloc(sizeof(Node));
+//         p->data = (i+1)*10;
+//         ahead->next = p;
+//     }
+//     ahead = head;
+//     return head;
+// }
+
+// void show(linklist head, int x){
+//     linklist p = head;
+//     for(int i = 0; i < x; i++, p = p->next){
+//         printf("%p %d\n", p->next, p->data);
+//     }
+
+// }
+
+// int main(){
+//     int x;//总数
+//     int y;//出局
+//     printf("please input x y\n");
+//     while(scanf("%d %d", &x, &y) != EOF){
+//         printf("last out data:%d\n", yuesefu(x, y));
+//     }    
+// }
+
+// int yuesefu(int x, int y){
+//     linklist head;
+//     head = create(head, x);
+//     show(head, x);
+    
+//     //约瑟夫start
+//     linklist ahead = head;
+//     linklist out;
+//     // 输出最后一个
+//     while(x != 1){
+//          for(int i = 1; i < y - 1; i++)
+//          {
+//              ahead = ahead->next;
+//          }
+
+//          out = ahead->next;
+//          printf("%2d ----> out \n", out->data);
+         
+//          ahead ->next = out->next;
+//          ahead = ahead->next;
+//          free(out);
+//          x--;
+//     }
+//     printf("ahead->data:%d\n", ahead->data);
+//     return ahead->data;
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// typedef struct node {
+//     unsigned int number;
+//     struct node * next;
+// }* pt, node;
+
+// void creat(pt * c, int a);
+
+// int yue(int m, int n);
+
+// void show(pt head, int x){
+//     pt p = head->next;
+//     for(int i = 0; i < x; i++, p = p->next){
+//         printf("%d\n", p->number);
+//     }
+
+// }
+
+// int main ()
+// {
+//     int m, n;
+//     while(scanf("%d %d", &m, &n) != EOF)
+//     {
+//         printf("last out data:%d\n", yue(m, n%m));
+//     }
+// }
+
+// void creat (pt * c, int a)
+// {
+//     pt current, prev;
+//     * c = (pt) malloc (sizeof(node));
+//     prev = * c;
+//     for(int i = 1; a--; i++)
+//     {
+//         current = (pt) malloc (sizeof(node));
+//         current->number = i;
+//         prev->next = current;
+//         prev = current ;
+//     }
+//     current->next = (*c)->next;
+// }
+
+// int yue(int m,int n)
+// {
+//     pt head, current, prev; 
+//     creat(&head,m);
+//     show(head, m);
+//     current = head->next;
+//     for (int i = 1; i < m; i++)
+//     {
+//         for (int j = 0; j < n - 1; j++)
+//         {
+//             current = current->next;
+//         }
+//         prev = current->next;
+//         current->number = current->next->number;
+//         current->next = current->next->next;
+//         printf("deldata:%d ", prev->number);
+//         free(prev);
+//     }
+//     return current->number;
+// }
 
 
 //单链表反转
@@ -71,122 +652,107 @@ head是头指针,而不是头结点 它只占用4字节大小空间(如果是32�
 // 1 ，两两对换
 // 2， 放入数组，倒置数组
 // 3， 递归实现    
-typedef struct node
-{
-    int data;
-    struct node * pnext;
-}Node, *pnode;
+// typedef struct node
+// {
+//     int data;
+//     struct node * pnext;
+// }Node, *pnode;
 
-pnode CreateNode()
-{
+// pnode CreateNode()
+// {
 
-    pnode phead=(pnode)malloc(sizeof(Node));
-    //判断是否申请空间成功
-    if(phead==NULL)
-    {
-        printf("fail to allocate memory");
-        return NULL;
-    }
-    phead->pnext=NULL;
+//     pnode phead=(pnode)malloc(sizeof(Node));
+//     //判断是否申请空间成功
+//     if(phead==NULL)
+//     {
+//         printf("fail to allocate memory");
+//         return NULL;
+//     }
+//     phead->pnext=NULL;
     
-    int n;
-    pnode ph=phead;
+//     int n;
+//     pnode ph=phead;
     
-    for(int i=0; i<5; i++)
-    {
+//     for(int i=0; i<5; i++)
+//     {
 
-        pnode p=(pnode)malloc(sizeof(Node));
-        if(p==NULL)
-        {
-            printf("fail to allocate memory");
-            return NULL;
-        }
-        p->data=(i+2)*19;
+//         pnode p=(pnode)malloc(sizeof(Node));
+//         if(p==NULL)
+//         {
+//             printf("fail to allocate memory");
+//             return NULL;
+//         }
+//         p->data=(i+2)*19;
 
-        phead->pnext=p;
-        p->pnext=NULL;
-        phead=phead->pnext;
+//         phead->pnext=p;
+//         p->pnext=NULL;
+//         phead=phead->pnext;
 
-    }
-    return ph;
-}
+//     }
+//     return ph;
+// }
 
-int list(pnode head)
-{
-    int count=0;
-    printf("遍历结果：\n");
-    while(head->pnext!=NULL)
-    {
-        printf("%d\t",head->pnext->data);
-        head=head->pnext;
-        count++;
-    }
-    printf("链表长度为：%d\n",count);
-    return count;
-}
+// int list(pnode head)
+// {
+//     int count=0;
+//     printf("遍历结果：\n");
+//     while(head->pnext!=NULL)
+//     {
+//         printf("%d\t",head->pnext->data);
+//         head=head->pnext;
+//         count++;
+//     }
+//     printf("链表长度为：%d\n",count);
+//     return count;
+// }
 
-pnode reverse2(pnode head)//两两节点之间不断交换
-{
-    // //判断是否是空链表
-    // if(head == NULL || head->next == NULL)
-    //     return head;
+// pnode reverse2(pnode head)//两两节点之间不断交换
+// {
+//      if(head == NULL || head->pnext == NULL) 
+//         return head; //加上头节点少于两个节点没有反转的必要。
+//     pnode p;
+//     pnode q;
 
-    // pnode pre = NULL;
-    // pnode next = NULL;
+//     p = head->pnext;
+//     q = head->pnext->pnext;
     
-    // while(head != NULL){
-    //     next = head->pnext;
-    //     head->pnext = pre;
-    //     pre = head;
-    //     head = next;
-    // }
-    // return pre;
-
-
-     if(NULL==head || NULL==head->pnext) 
-        return head; //加上头节点少于两个节点没有反转的必要。
-
-    pnode p;
-    pnode q;
-    p = head; 
-    q = head->pnext;
+//     p->pnext = NULL; //旧的头指针是新的尾指针，next需要指向NULL
     
-    
-    p->pnext = NULL; //旧的头指针是新的尾指针，next需要指向NULL
-    
-    pnode tmp;
-    while(tmp != NULL){
-        tmp = q->pnext;
-        q->pnext = p;
-        //前两个都反转了所以反转之前 需要一个临时tmp保存下一个 要不都反转了 找不到了
-        p = q;
-        q = tmp;
-        // if(tmp == NULL){
-        //     return p;      
-        // }
-    }
-    // 最后一个节点当头节点了 输出不出来 todo
-    return p;
-   
-}
+//     pnode tmp = q;
+//     while(1)
+//     {
+
+//         tmp = q->pnext;
+//         q->pnext = p;
+//         //前两个都反转了所以反转之前 需要一个临时tmp保存下一个 要不都反转了 找不到了
+//         p = q;
+//         q = tmp;
+//         if(tmp == NULL){
+//             head->pnext = p;
+//             return head;      
+//         }
+//     }   
+// }
 
     
 
-void reverse1(pnode head,int count)//把链表的节点值放在数组中，倒置数组
-{
-    int a[5]= {0};
+// void reverse1(pnode head,int count)//把链表的节点值放在数组中，倒置数组
+// {
+//     int a[5]= {0};
 
-    for(int i=0; i<count,head->pnext!=NULL; i++)
-    {
-        a[i]=head->pnext->data;
-        head=head->pnext;
-    }
+//     for(int i=0; i<count,head->pnext!=NULL; i++)
+//     {
+//         a[i]=head->pnext->data;
+//         head=head->pnext;
+//     }
 
-    for(int j=0,i=count-1; j<count; j++,i--)
-        printf("%d\t",a[i]);
+//     for(int j=0,i=count-1; j<count; j++,i--)
+//         printf("%d\t",a[i]);
 
-}
+// }
 
+
+// // 类似尾递归类似上面的两两相倒
 // pnode reverse3(pnode pre,pnode cur,pnode t)//递归实现链表倒置
 // {
 //     cur -> pnext = pre;
@@ -195,41 +761,30 @@ void reverse1(pnode head,int count)//把链表的节点值放在数组中，倒�
 //     reverse3(cur,t,t->pnext);
 // }
 
-// pnode new_reverse3(pnode head){ //新的递归转置
+// int main()
+// {
+//      pnode p=CreateNode();
+//      pnode p3=CreateNode();
 
-//     if(head == NULL || head->next == NULL)
-//         return head;
-//     pnode new_node = new_reverse3(head->next);
-//     head->next->next = head;
-//     head->next = NULL;
-//     return new_node; //返回新链表头指针
+//      int n=list(p);
+     
+//      // printf("反转之后1：\n");
+//      // reverse1(p, n);
+//      // printf("\n");
+//      // printf("反转之后的：\n");
+//      // pnode p1=reverse2(p);
+     
+//      // list(p1);
+//      p3 -> pnext = reverse3(NULL, p3 -> pnext,p3->pnext->pnext);
+//      printf("3反转之后：\n");
+//      list(p3);
+//      // free(p);
+//      // free(p1);
+//      // free(p3);
 
+//      // Sleep(10000);
+//      return 0;
 // }
-
-int main()
-{
-     pnode p=CreateNode();
-     pnode p3=CreateNode();
-
-     int n=list(p);
-     
-     printf("1反转之后：\n");
-     reverse1(p, n);
-     printf("\n");
-     printf("2反转之后：\n");
-     pnode p1=reverse2(p);
-     
-     list(p1);
-     // p3 -> pnext = reverse3(NULL,p3 -> pnext,p3->pnext->pnext);
-     // printf("3反转之后：\n");
-     // list(p3);
-     // free(p);
-     // free(p1);
-     // free(p3);
-
-     // Sleep(10000);
-     return 0;
-}
 
 // 这里注意： head ->next = pre; 以及 pre = head->next，前者把head->next 指向 pre，而后者是把head->next指向的节点赋值给pre。
 // 如果原来head->next 指向 pnext节点，前者则是head重新指向pre，与pnext节点断开，后者把pnext值赋值给pre，head与pnext并没有断开。
